@@ -7,7 +7,9 @@ import {
   fhirBaseUrl,
   openmrsFetch,
   useDebounce,
+  type Role,
 } from '@openmrs/esm-framework';
+import { restBaseUrl } from '@openmrs/esm-api';
 
 export interface LocationResponse {
   type: string;
@@ -119,4 +121,60 @@ export function useLocations(locationTag?: string, count: number = 0, searchQuer
   }, [isLoading, data, isValidating, setSize, error]);
 
   return memoizedLocations;
+}
+
+export function useUserInheritedRoles(userUuid?: string) {
+  const customRepresentation =
+    'custom:(uuid,display,username,roles:(uuid,name,display,inheritedRoles:(uuid,name,display)))';
+  const url = userUuid ? `${restBaseUrl}/user/${userUuid}?v=${customRepresentation}` : null;
+
+  const { data, error, isLoading } = useSwrImmutable<FetchResponse<any>>(url, openmrsFetch, {
+    shouldRetryOnError(err) {
+      if (err?.response?.status) {
+        return err.response.status >= 500;
+      }
+      return false;
+    },
+  });
+
+  const allRoles = useMemo(() => {
+    if (!data?.data?.roles) {
+      return [];
+    }
+
+    const roles: Role[] = [];
+    const processedRoleUuids = new Set<string>();
+
+    const collectRoles = (roleList: any[]) => {
+      if (!roleList || !Array.isArray(roleList)) {
+        return;
+      }
+
+      roleList.forEach((role) => {
+        if (role.uuid && !processedRoleUuids.has(role.uuid)) {
+          processedRoleUuids.add(role.uuid);
+
+          roles.push({
+            uuid: role.uuid,
+            name: role.name,
+            display: role.display,
+          });
+
+          if (role.inheritedRoles && Array.isArray(role.inheritedRoles)) {
+            collectRoles(role.inheritedRoles);
+          }
+        }
+      });
+    };
+
+    collectRoles(data.data.roles);
+
+    return roles;
+  }, [data]);
+
+  return {
+    allRoles,
+    isLoading,
+    error,
+  };
 }

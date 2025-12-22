@@ -8,8 +8,8 @@ import {
   Search,
 } from '@carbon/react';
 import { getCoreTranslation } from '@openmrs/esm-translations';
-import { useOnVisible } from '@openmrs/esm-framework';
-import { useLocationByUuid, useLocations } from './location-picker.resource';
+import { useOnVisible, useSession } from '@openmrs/esm-framework';
+import { useLocationByUuid, useLocations, useUserInheritedRoles } from './location-picker.resource';
 import styles from './location-picker.module.scss';
 
 interface LocationPickerProps {
@@ -29,6 +29,23 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const searchId = useId();
+
+  // Récupérer l'utilisateur courant
+  const { user } = useSession();
+
+  // Récupérer tous les rôles (directs + hérités)
+  const { allRoles: userInheritedRoles, isLoading: isLoadingRoles } = useUserInheritedRoles(user?.uuid);
+
+  // Fallback sur les rôles de la session si les inherited roles ne sont pas encore chargés
+  const userRoles = userInheritedRoles.length > 0 ? userInheritedRoles : user?.roles ?? [];
+
+  // Exemple d'utilisation : afficher les rôles dans la console (pour debug)
+  // console.log('Current user:', user?.display);
+  // console.log('User roles (directs):', user?.roles?.map((role) => role.name) ?? []);
+  // console.log(
+  //   'User roles (avec hérités):',
+  //   userRoles.map((role) => role.name),
+  // );
 
   const { location: defaultLocation } = useLocationByUuid(defaultLocationUuid);
 
