@@ -6,6 +6,7 @@ module.exports = {
   },
   moduleNameMapper: {
     '@openmrs/esm-framework': '@openmrs/esm-framework/mock',
+    '@openmrs/esm-translations': '@openmrs/esm-translations/mock',
     '\\.(s?css)$': 'identity-obj-proxy',
     '^lodash-es/(.*)$': 'lodash/$1',
     'lodash-es': 'lodash',

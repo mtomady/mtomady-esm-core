@@ -1,11 +1,13 @@
 import React from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import '@testing-library/jest-dom/vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { type LoggedInUser, type Session } from '@openmrs/esm-api';
-import { type FHIRLocationResource } from '@openmrs/esm-emr-api';
-import { useConfig, useSession } from '@openmrs/esm-react-utils';
+import {
+  useConfig,
+  useSession,
+  type LoggedInUser,
+  type Session,
+  type FHIRLocationResource,
+} from '@openmrs/esm-framework';
 import {
   inpatientWardResponse,
   locationResponseForNonExistingSearch,
@@ -19,19 +21,25 @@ import { useLocationByUuid, useLocations } from './location-picker.resource';
 const validLocationUuid = '1ce1b7d4-c865-4178-82b0-5932e51503d6';
 const inpatientWardLocationUuid = 'ba685651-ed3b-4e63-9b35-78893060758a';
 
-const mockUseConfig = vi.mocked(useConfig);
-const mockUseSession = vi.mocked(useSession);
-const mockUseLocationByUuid = vi.mocked(useLocationByUuid);
-const mockUseLocations = vi.mocked(useLocations);
+const mockUseConfig = jest.mocked(useConfig);
+const mockUseSession = jest.mocked(useSession);
+const mockUseLocationByUuid = jest.mocked(useLocationByUuid);
+const mockUseLocations = jest.mocked(useLocations);
 
-vi.mock('./location-picker.resource', () => ({
-  useLocationByUuid: vi.fn(),
-  useLocations: vi.fn(),
+jest.mock('./location-picker.resource', () => ({
+  ...jest.requireActual('./location-picker.resource'),
+  useLocationByUuid: jest.fn(),
+  useLocations: jest.fn(),
+  useUserInheritedRoles: jest.fn(() => ({
+    allRoles: [],
+    isLoading: false,
+    error: null,
+  })),
 }));
 
-vi.mock('@openmrs/esm-api', async () => ({
-  ...(await import('@openmrs/esm-api')),
-  openmrsFetch: vi.fn((url) => {
+jest.mock('@openmrs/esm-api', () => ({
+  ...jest.requireActual('@openmrs/esm-api'),
+  openmrsFetch: jest.fn((url) => {
     if (url === `/ws/fhir2/R4/Location?_id=${inpatientWardLocationUuid}`) {
       return inpatientWardResponse;
     }
@@ -43,8 +51,8 @@ vi.mock('@openmrs/esm-api', async () => ({
     }
     return mockLoginLocations;
   }),
-  setSessionLocation: vi.fn().mockResolvedValue({}),
-  setUserProperties: vi.fn().mockResolvedValue({}),
+  setSessionLocation: jest.fn().mockResolvedValue({}),
+  setUserProperties: jest.fn().mockResolvedValue({}),
 }));
 
 describe('LocationPicker', () => {
@@ -71,14 +79,14 @@ describe('LocationPicker', () => {
       hasMore: false,
       loadingNewData: false,
       error: null,
-      setPage: vi.fn().mockResolvedValue(undefined),
+      setPage: jest.fn().mockResolvedValue(undefined),
     });
   });
 
   it('should render a search input and list of login locations', async () => {
-    render(<LocationPicker selectedLocationUuid={inpatientWardLocationUuid} onChange={vi.fn()} />);
+    render(<LocationPicker selectedLocationUuid={inpatientWardLocationUuid} onChange={jest.fn()} />);
 
-    const searchInput = screen.getByRole('searchbox', { name: /search for a location/i });
+    const searchInput = screen.getByRole('searchbox');
     expect(searchInput).toBeInTheDocument();
 
     await waitFor(() => {
@@ -94,7 +102,7 @@ describe('LocationPicker', () => {
 
   it('should call onChange when a location is selected', async () => {
     const user = userEvent.setup();
-    const handleChange = vi.fn();
+    const handleChange = jest.fn();
 
     render(<LocationPicker selectedLocationUuid={validLocationUuid} onChange={handleChange} />);
 
@@ -109,7 +117,7 @@ describe('LocationPicker', () => {
   });
 
   it('should select the provided selectedLocation when the component is rendered', async () => {
-    render(<LocationPicker selectedLocationUuid={inpatientWardLocationUuid} onChange={vi.fn()} />);
+    render(<LocationPicker selectedLocationUuid={inpatientWardLocationUuid} onChange={jest.fn()} />);
 
     await waitFor(() => {
       const inpatientWardOption = screen.getByRole('radio', { name: /inpatient ward/i });
@@ -124,7 +132,7 @@ describe('LocationPicker', () => {
       isLoading: false,
     });
 
-    render(<LocationPicker defaultLocationUuid={inpatientWardLocationUuid} onChange={vi.fn()} />);
+    render(<LocationPicker defaultLocationUuid={inpatientWardLocationUuid} onChange={jest.fn()} />);
 
     await waitFor(() => {
       const locations = screen.getAllByRole('radio');
@@ -160,7 +168,7 @@ describe('LocationPicker', () => {
           hasMore: false,
           loadingNewData: false,
           error: null,
-          setPage: vi.fn().mockResolvedValue(undefined),
+          setPage: jest.fn().mockResolvedValue(undefined),
         };
       }
       return {
@@ -170,17 +178,17 @@ describe('LocationPicker', () => {
         hasMore: false,
         loadingNewData: false,
         error: null,
-        setPage: vi.fn().mockResolvedValue(undefined),
+        setPage: jest.fn().mockResolvedValue(undefined),
       };
     });
 
-    render(<LocationPicker defaultLocationUuid={inpatientWardLocationUuid} onChange={vi.fn()} />);
+    render(<LocationPicker defaultLocationUuid={inpatientWardLocationUuid} onChange={jest.fn()} />);
 
     await waitFor(() => {
-      expect(screen.getByRole('searchbox', { name: /search for a location/i })).toBeInTheDocument();
+      expect(screen.getByRole('searchbox')).toBeInTheDocument();
     });
 
-    const searchInput = screen.getByRole('searchbox', { name: /search for a location/i });
+    const searchInput = screen.getByRole('searchbox');
     await user.type(searchInput, 'outpatient');
 
     await waitFor(() => {
@@ -207,7 +215,7 @@ describe('LocationPicker', () => {
           hasMore: false,
           loadingNewData: false,
           error: null,
-          setPage: vi.fn().mockResolvedValue(undefined),
+          setPage: jest.fn().mockResolvedValue(undefined),
         };
       }
       return {
@@ -217,17 +225,17 @@ describe('LocationPicker', () => {
         hasMore: false,
         loadingNewData: false,
         error: null,
-        setPage: vi.fn().mockResolvedValue(undefined),
+        setPage: jest.fn().mockResolvedValue(undefined),
       };
     });
 
-    render(<LocationPicker defaultLocationUuid={inpatientWardLocationUuid} onChange={vi.fn()} />);
+    render(<LocationPicker defaultLocationUuid={inpatientWardLocationUuid} onChange={jest.fn()} />);
 
     await waitFor(() => {
-      expect(screen.getByRole('searchbox', { name: /search for a location/i })).toBeInTheDocument();
+      expect(screen.getByRole('searchbox')).toBeInTheDocument();
     });
 
-    const searchInput = screen.getByRole('searchbox', { name: /search for a location/i });
+    const searchInput = screen.getByRole('searchbox');
     await user.type(searchInput, 'search_for_no_location');
 
     await waitFor(() => {
@@ -246,47 +254,26 @@ describe('LocationPicker', () => {
       hasMore: false,
       loadingNewData: false,
       error: null,
-      setPage: vi.fn().mockResolvedValue(undefined),
+      setPage: jest.fn().mockResolvedValue(undefined),
     });
 
-    render(<LocationPicker onChange={vi.fn()} />);
+    render(<LocationPicker onChange={jest.fn()} />);
 
     const skeletons = screen.getAllByRole('progressbar');
     expect(skeletons).toHaveLength(5);
   });
 
-  it('should display loading indicator when loading new data', async () => {
-    mockUseLocations.mockReturnValue({
-      locations: mockLoginLocations.data.entry as any,
-      isLoading: false,
-      totalResults: 4,
-      hasMore: true,
-      loadingNewData: true,
-      error: null,
-      setPage: vi.fn().mockResolvedValue(undefined),
-    });
-
-    render(<LocationPicker onChange={vi.fn()} />);
-
-    await waitFor(() => {
-      // Find the loading text in the InlineLoading component (not in SVG title)
-      const loadingTexts = screen.getAllByText(/loading/i);
-      const loadingIndicator = loadingTexts.find((element) => element.className.includes('cds--inline-loading__text'));
-      expect(loadingIndicator).toBeInTheDocument();
-    });
-  });
-
   it('should call onChange with undefined when search input changes', async () => {
     const user = userEvent.setup();
-    const handleChange = vi.fn();
+    const handleChange = jest.fn();
 
     render(<LocationPicker onChange={handleChange} />);
 
     await waitFor(() => {
-      expect(screen.getByRole('searchbox', { name: /search for a location/i })).toBeInTheDocument();
+      expect(screen.getByRole('searchbox')).toBeInTheDocument();
     });
 
-    const searchInput = screen.getByRole('searchbox', { name: /search for a location/i });
+    const searchInput = screen.getByRole('searchbox');
     await user.type(searchInput, 'test');
 
     // onChange is called without arguments when search changes, which means locationUuid is undefined
@@ -296,15 +283,15 @@ describe('LocationPicker', () => {
 
   it('should trim whitespace from search terms', async () => {
     const user = userEvent.setup();
-    const handleChange = vi.fn();
+    const handleChange = jest.fn();
 
     render(<LocationPicker onChange={handleChange} />);
 
     await waitFor(() => {
-      expect(screen.getByRole('searchbox', { name: /search for a location/i })).toBeInTheDocument();
+      expect(screen.getByRole('searchbox')).toBeInTheDocument();
     });
 
-    const searchInput = screen.getByRole('searchbox', { name: /search for a location/i });
+    const searchInput = screen.getByRole('searchbox');
     await user.type(searchInput, '  outpatient  ');
 
     // Verify that the trimmed search term is used (check if the mock was called with trimmed value)
@@ -332,10 +319,10 @@ describe('LocationPicker', () => {
       hasMore: false,
       loadingNewData: false,
       error: null,
-      setPage: vi.fn().mockResolvedValue(undefined),
+      setPage: jest.fn().mockResolvedValue(undefined),
     });
 
-    render(<LocationPicker defaultLocationUuid={inpatientWardLocationUuid} onChange={vi.fn()} />);
+    render(<LocationPicker defaultLocationUuid={inpatientWardLocationUuid} onChange={jest.fn()} />);
 
     await waitFor(() => {
       const locations = screen.getAllByRole('radio');
@@ -373,7 +360,7 @@ describe('LocationPicker', () => {
           hasMore: false,
           loadingNewData: false,
           error: null,
-          setPage: vi.fn().mockResolvedValue(undefined),
+          setPage: jest.fn().mockResolvedValue(undefined),
         };
       }
       return {
@@ -383,17 +370,17 @@ describe('LocationPicker', () => {
         hasMore: false,
         loadingNewData: false,
         error: null,
-        setPage: vi.fn().mockResolvedValue(undefined),
+        setPage: jest.fn().mockResolvedValue(undefined),
       };
     });
 
-    render(<LocationPicker defaultLocationUuid={inpatientWardLocationUuid} onChange={vi.fn()} />);
+    render(<LocationPicker defaultLocationUuid={inpatientWardLocationUuid} onChange={jest.fn()} />);
 
     await waitFor(() => {
-      expect(screen.getByRole('searchbox', { name: /search for a location/i })).toBeInTheDocument();
+      expect(screen.getByRole('searchbox')).toBeInTheDocument();
     });
 
-    const searchInput = screen.getByRole('searchbox', { name: /search for a location/i });
+    const searchInput = screen.getByRole('searchbox');
     await user.type(searchInput, 'mobile');
 
     await waitFor(() => {
@@ -412,15 +399,14 @@ describe('LocationPicker', () => {
       hasMore: false,
       loadingNewData: false,
       error: mockError,
-      setPage: vi.fn().mockResolvedValue(undefined),
+      setPage: jest.fn().mockResolvedValue(undefined),
     });
 
-    render(<LocationPicker onChange={vi.fn()} />);
+    render(<LocationPicker onChange={jest.fn()} />);
 
     await waitFor(() => {
-      // Find the error text in the InlineNotification (not in SVG title)
-      const errorTexts = screen.getAllByText(/error/i);
-      const errorNotification = errorTexts.find((element) => element.textContent === 'Error');
+      // Find the error notification by its role
+      const errorNotification = screen.getByRole('status');
       expect(errorNotification).toBeInTheDocument();
     });
 

@@ -12,22 +12,34 @@ import {
   type FetchResponse,
 } from '@openmrs/esm-framework';
 import {
+  inpatientWardResponse,
   mockLoginLocations,
+  outpatientClinicResponse,
   validatingLocationFailureResponse,
-  validatingLocationSuccessResponse,
 } from '../../__mocks__/locations.mock';
 import { mockConfig } from '../../__mocks__/config.mock';
 import renderWithRouter from '../test-helpers/render-with-router';
 import LocationPickerView from './location-picker-view.component';
 
+// Mock useUserInheritedRoles to return empty array (allows all locations)
+jest.mock('../location-picker-selector/location-picker.resource', () => ({
+  ...jest.requireActual('../location-picker-selector/location-picker.resource'),
+  useUserInheritedRoles: jest.fn(() => ({
+    allRoles: [],
+    isLoading: false,
+    error: null,
+  })),
+}));
+
+// Use real location names from mockLoginLocations
 const fistLocation = {
-  uuid: 'uuid_1',
-  name: 'location_1',
+  uuid: '44c3efb0-2583-4c80-a79e-1f756a03c0a1', // Outpatient Clinic
+  name: 'Outpatient Clinic',
 };
 
 const secondLocation = {
-  uuid: 'uuid_2',
-  name: 'location_2',
+  uuid: 'ba685651-ed3b-4e63-9b35-78893060758a', // Inpatient Ward
+  name: 'Inpatient Ward',
 };
 
 const invalidLocationUuid = '2gf1b7d4-c865-4178-82b0-5932e51503d6';
@@ -52,8 +64,15 @@ describe('LocationPickerView', () => {
       } as LoggedInUser,
     } as Session);
 
+    // Create validation response for Outpatient Clinic (add ok: true to match validation format)
+    const outpatientClinicValidationResponse = {
+      ok: true,
+      ...outpatientClinicResponse,
+    };
+
     const urlResponseMap: Record<string, FetchResponse<unknown>> = {
-      [`/ws/fhir2/R4/Location?_id=${fistLocation.uuid}`]: validatingLocationSuccessResponse as FetchResponse<unknown>,
+      [`/ws/fhir2/R4/Location?_id=${fistLocation.uuid}`]: outpatientClinicValidationResponse as FetchResponse<unknown>,
+      [`/ws/fhir2/R4/Location?_id=${secondLocation.uuid}`]: inpatientWardResponse as FetchResponse<unknown>,
       [`/ws/fhir2/R4/Location?_id=${invalidLocationUuid}`]: validatingLocationFailureResponse as FetchResponse<unknown>,
     };
 
