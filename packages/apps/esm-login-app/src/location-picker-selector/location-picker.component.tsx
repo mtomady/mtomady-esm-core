@@ -10,6 +10,7 @@ import {
 import { getCoreTranslation } from '@openmrs/esm-translations';
 import { useOnVisible, useSession } from '@openmrs/esm-framework';
 import { useLocationByUuid, useLocations, useUserInheritedRoles } from './location-picker.resource';
+import { getAllowedLocationUuidsByRoles } from './locations.constants';
 import styles from './location-picker.module.scss';
 
 interface LocationPickerProps {
@@ -30,22 +31,15 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const searchId = useId();
 
-  // Récupérer l'utilisateur courant
   const { user } = useSession();
 
-  // Récupérer tous les rôles (directs + hérités)
   const { allRoles: userInheritedRoles, isLoading: isLoadingRoles } = useUserInheritedRoles(user?.uuid);
 
-  // Fallback sur les rôles de la session si les inherited roles ne sont pas encore chargés
   const userRoles = userInheritedRoles.length > 0 ? userInheritedRoles : user?.roles ?? [];
 
-  // Exemple d'utilisation : afficher les rôles dans la console (pour debug)
-  // console.log('Current user:', user?.display);
-  // console.log('User roles (directs):', user?.roles?.map((role) => role.name) ?? []);
-  // console.log(
-  //   'User roles (avec hérités):',
-  //   userRoles.map((role) => role.name),
-  // );
+  const userRoleNames = useMemo(() => userRoles.map((role) => role.name), [userRoles]);
+
+  const allowedLocationUuids = useMemo(() => getAllowedLocationUuidsByRoles(userRoleNames), [userRoleNames]);
 
   const { location: defaultLocation } = useLocationByUuid(defaultLocationUuid);
 
@@ -59,11 +53,27 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
   } = useLocations(locationTag, locationsPerRequest, searchTerm);
 
   const locations = useMemo(() => {
-    if (defaultLocation && !searchTerm && defaultLocationUuid) {
-      return [defaultLocation, ...fetchedLocations.filter(({ resource }) => resource.id !== defaultLocationUuid)];
+    let filteredLocations = fetchedLocations ?? [];
+
+    if (allowedLocationUuids.length > 0) {
+      filteredLocations = filteredLocations.filter(({ resource }) => allowedLocationUuids.includes(resource.id));
     }
-    return fetchedLocations ?? [];
-  }, [defaultLocation, fetchedLocations, defaultLocationUuid, searchTerm]);
+
+    if (defaultLocation && !searchTerm && defaultLocationUuid) {
+      const isDefaultLocationAllowed =
+        allowedLocationUuids.length === 0 || allowedLocationUuids.includes(defaultLocationUuid);
+
+      if (isDefaultLocationAllowed) {
+        const defaultLocationInList = filteredLocations.some(({ resource }) => resource.id === defaultLocationUuid);
+        if (!defaultLocationInList) {
+          return [defaultLocation, ...filteredLocations];
+        }
+        return [defaultLocation, ...filteredLocations.filter(({ resource }) => resource.id !== defaultLocationUuid)];
+      }
+    }
+
+    return filteredLocations;
+  }, [defaultLocation, fetchedLocations, defaultLocationUuid, searchTerm, allowedLocationUuids]);
 
   const handleSearchChange = useCallback(
     (searchQuery: string) => {
