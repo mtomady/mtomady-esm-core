@@ -8,6 +8,7 @@ import {
   openmrsFetch,
   useDebounce,
   type Role,
+  useSession,
 } from '@openmrs/esm-framework';
 import { restBaseUrl } from '@openmrs/esm-api';
 import { ROLE_TO_LOCATION_UUID_MAP } from './locations.constants';
@@ -189,4 +190,41 @@ export function getAllowedLocationUuidsByRoles(roleNames: string[]): string[] {
   return roleNames
     .map((roleName) => ROLE_TO_LOCATION_UUID_MAP[roleName])
     .filter((uuid): uuid is string => uuid !== undefined);
+}
+
+/**
+ * Hook that wraps useLocations and filters locations based on user roles
+ * @param locationTag Optional location tag to filter by
+ * @param count Number of locations per request
+ * @param searchQuery Search query string
+ * @returns LoginLocationData with locations filtered by user roles
+ */
+export function useRoleFilteredLocations(
+  locationTag?: string,
+  count: number = 0,
+  searchQuery: string = '',
+): LoginLocationData {
+  const locationsData = useLocations(locationTag, count, searchQuery);
+  const { user } = useSession();
+  const { allRoles: userInheritedRoles } = useUserInheritedRoles(user?.uuid);
+
+  const roleFilteredResult = useMemo(() => {
+    const userRoles = userInheritedRoles.length > 0 ? userInheritedRoles : user?.roles ?? [];
+    const userRoleNames = userRoles.map((role) => role.name);
+    const allowedLocationUuids = getAllowedLocationUuidsByRoles(userRoleNames);
+
+    // If no role restrictions, return all locations
+    if (allowedLocationUuids.length === 0) {
+      return locationsData.locations;
+    }
+
+    // Filter locations based on allowed UUIDs
+    return locationsData.locations.filter(({ resource }) => allowedLocationUuids.includes(resource.id));
+  }, [locationsData.locations, userInheritedRoles, user?.roles]);
+
+  // Return a new object that looks exactly like the original
+  return {
+    ...locationsData, // Copy all original properties
+    locations: roleFilteredResult, // Overwrite the 'locations' property with our filtered list
+  };
 }

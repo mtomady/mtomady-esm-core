@@ -8,13 +8,8 @@ import {
   Search,
 } from '@carbon/react';
 import { getCoreTranslation } from '@openmrs/esm-translations';
-import { useOnVisible, useSession } from '@openmrs/esm-framework';
-import {
-  useLocationByUuid,
-  useLocations,
-  useUserInheritedRoles,
-  getAllowedLocationUuidsByRoles,
-} from './location-picker.resource';
+import { useOnVisible } from '@openmrs/esm-framework';
+import { useLocationByUuid, useRoleFilteredLocations } from './location-picker.resource';
 import styles from './location-picker.module.scss';
 
 interface LocationPickerProps {
@@ -35,16 +30,6 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const searchId = useId();
 
-  const { user } = useSession();
-
-  const { allRoles: userInheritedRoles, isLoading: isLoadingRoles } = useUserInheritedRoles(user?.uuid);
-
-  const userRoles = userInheritedRoles.length > 0 ? userInheritedRoles : user?.roles ?? [];
-
-  const userRoleNames = useMemo(() => userRoles.map((role) => role.name), [userRoles]);
-
-  const allowedLocationUuids = useMemo(() => getAllowedLocationUuidsByRoles(userRoleNames), [userRoleNames]);
-
   const { location: defaultLocation } = useLocationByUuid(defaultLocationUuid);
 
   const {
@@ -54,30 +39,21 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     loadingNewData,
     error,
     setPage,
-  } = useLocations(locationTag, locationsPerRequest, searchTerm);
+  } = useRoleFilteredLocations(locationTag, locationsPerRequest, searchTerm);
 
   const locations = useMemo(() => {
     let filteredLocations = fetchedLocations ?? [];
 
-    if (allowedLocationUuids.length > 0) {
-      filteredLocations = filteredLocations.filter(({ resource }) => allowedLocationUuids.includes(resource.id));
-    }
-
     if (defaultLocation && !searchTerm && defaultLocationUuid) {
-      const isDefaultLocationAllowed =
-        allowedLocationUuids.length === 0 || allowedLocationUuids.includes(defaultLocationUuid);
-
-      if (isDefaultLocationAllowed) {
-        const defaultLocationInList = filteredLocations.some(({ resource }) => resource.id === defaultLocationUuid);
-        if (!defaultLocationInList) {
-          return [defaultLocation, ...filteredLocations];
-        }
-        return [defaultLocation, ...filteredLocations.filter(({ resource }) => resource.id !== defaultLocationUuid)];
+      const defaultLocationInList = filteredLocations.some(({ resource }) => resource.id === defaultLocationUuid);
+      if (!defaultLocationInList) {
+        return [defaultLocation, ...filteredLocations];
       }
+      return [defaultLocation, ...filteredLocations.filter(({ resource }) => resource.id !== defaultLocationUuid)];
     }
 
     return filteredLocations;
-  }, [defaultLocation, fetchedLocations, defaultLocationUuid, searchTerm, allowedLocationUuids]);
+  }, [defaultLocation, fetchedLocations, defaultLocationUuid, searchTerm]);
 
   const handleSearchChange = useCallback(
     (searchQuery: string) => {
