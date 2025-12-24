@@ -54,14 +54,3 @@ export const ROLE_TO_LOCATION_UUID_MAP: Record<string, string> = {
   'Access: Blood Transfusion Center': LOCATION_UUIDS.BLOOD_TRANSFUSION_CENTER,
   'Access: Accounting': LOCATION_UUIDS.ACCOUNTING,
 };
-
-/**
- * Get allowed location UUIDs based on user roles
- * @param roleNames Array of role names (e.g., ['Access: Imaging', 'Access: Laboratory'])
- * @returns Array of allowed location UUIDs
- */
-export function getAllowedLocationUuidsByRoles(roleNames: string[]): string[] {
-  return roleNames
-    .map((roleName) => ROLE_TO_LOCATION_UUID_MAP[roleName])
-    .filter((uuid): uuid is string => uuid !== undefined);
-}

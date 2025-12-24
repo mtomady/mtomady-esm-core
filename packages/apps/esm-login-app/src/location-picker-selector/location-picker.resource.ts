@@ -10,6 +10,7 @@ import {
   type Role,
 } from '@openmrs/esm-framework';
 import { restBaseUrl } from '@openmrs/esm-api';
+import { ROLE_TO_LOCATION_UUID_MAP } from './locations.constants';
 
 export interface LocationResponse {
   type: string;
@@ -177,4 +178,15 @@ export function useUserInheritedRoles(userUuid?: string) {
     isLoading,
     error,
   };
+}
+
+/**
+ * Get allowed location UUIDs based on user roles
+ * @param roleNames Array of role names (e.g., ['Access: Imaging', 'Access: Laboratory'])
+ * @returns Array of allowed location UUIDs
+ */
+export function getAllowedLocationUuidsByRoles(roleNames: string[]): string[] {
+  return roleNames
+    .map((roleName) => ROLE_TO_LOCATION_UUID_MAP[roleName])
+    .filter((uuid): uuid is string => uuid !== undefined);
 }

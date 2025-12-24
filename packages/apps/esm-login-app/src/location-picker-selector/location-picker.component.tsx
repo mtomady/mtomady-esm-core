@@ -9,8 +9,12 @@ import {
 } from '@carbon/react';
 import { getCoreTranslation } from '@openmrs/esm-translations';
 import { useOnVisible, useSession } from '@openmrs/esm-framework';
-import { useLocationByUuid, useLocations, useUserInheritedRoles } from './location-picker.resource';
-import { getAllowedLocationUuidsByRoles } from './locations.constants';
+import {
+  useLocationByUuid,
+  useLocations,
+  useUserInheritedRoles,
+  getAllowedLocationUuidsByRoles,
+} from './location-picker.resource';
 import styles from './location-picker.module.scss';
 
 interface LocationPickerProps {
