@@ -213,18 +213,15 @@ export function useRoleFilteredLocations(
     const userRoleNames = userRoles.map((role) => role.name);
     const allowedLocationUuids = getAllowedLocationUuidsByRoles(userRoleNames);
 
-    // If no role restrictions, return all locations
     if (allowedLocationUuids.length === 0) {
       return locationsData.locations;
     }
 
-    // Filter locations based on allowed UUIDs
     return locationsData.locations.filter(({ resource }) => allowedLocationUuids.includes(resource.id));
   }, [locationsData.locations, userInheritedRoles, user?.roles]);
 
-  // Return a new object that looks exactly like the original
   return {
-    ...locationsData, // Copy all original properties
-    locations: roleFilteredResult, // Overwrite the 'locations' property with our filtered list
+    ...locationsData,
+    locations: roleFilteredResult,
   };
 }
