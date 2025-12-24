@@ -16,7 +16,7 @@ import {
 } from '../../__mocks__/locations.mock';
 import { mockConfig } from '../../__mocks__/config.mock';
 import { LocationPicker } from './location-picker.component';
-import { useLocationByUuid, useLocations } from './location-picker.resource';
+import { useLocationByUuid, useRoleFilteredLocations } from './location-picker.resource';
 
 const validLocationUuid = '1ce1b7d4-c865-4178-82b0-5932e51503d6';
 const inpatientWardLocationUuid = 'ba685651-ed3b-4e63-9b35-78893060758a';
@@ -24,12 +24,12 @@ const inpatientWardLocationUuid = 'ba685651-ed3b-4e63-9b35-78893060758a';
 const mockUseConfig = jest.mocked(useConfig);
 const mockUseSession = jest.mocked(useSession);
 const mockUseLocationByUuid = jest.mocked(useLocationByUuid);
-const mockUseLocations = jest.mocked(useLocations);
+const mockUseRoleFilteredLocations = jest.mocked(useRoleFilteredLocations);
 
 jest.mock('./location-picker.resource', () => ({
   ...jest.requireActual('./location-picker.resource'),
   useLocationByUuid: jest.fn(),
-  useLocations: jest.fn(),
+  useRoleFilteredLocations: jest.fn(),
   useUserInheritedRoles: jest.fn(() => ({
     allRoles: [],
     isLoading: false,
@@ -72,7 +72,7 @@ describe('LocationPicker', () => {
       isLoading: false,
     });
 
-    mockUseLocations.mockReturnValue({
+    mockUseRoleFilteredLocations.mockReturnValue({
       locations: mockLoginLocations.data.entry as Array<FHIRLocationResource>,
       isLoading: false,
       totalResults: 4,
@@ -158,8 +158,8 @@ describe('LocationPicker', () => {
       isLoading: false,
     });
 
-    // Mock useLocations to return different results based on search query
-    mockUseLocations.mockImplementation((locationTag, count, searchQuery) => {
+    // Mock useRoleFilteredLocations to return different results based on search query
+    mockUseRoleFilteredLocations.mockImplementation((locationTag, count, searchQuery) => {
       if (searchQuery === 'outpatient') {
         return {
           locations: outpatientClinicResponse.data.entry as any,
@@ -205,8 +205,8 @@ describe('LocationPicker', () => {
       isLoading: false,
     });
 
-    // Mock useLocations to return empty results when searching for non-existent location
-    mockUseLocations.mockImplementation((locationTag, count, searchQuery) => {
+    // Mock useRoleFilteredLocations to return empty results when searching for non-existent location
+    mockUseRoleFilteredLocations.mockImplementation((locationTag, count, searchQuery) => {
       if (searchQuery === 'search_for_no_location') {
         return {
           locations: [] as any,
@@ -247,7 +247,7 @@ describe('LocationPicker', () => {
   });
 
   it('should display skeleton loaders when loading initial data', () => {
-    mockUseLocations.mockReturnValue({
+    mockUseRoleFilteredLocations.mockReturnValue({
       locations: [] as any,
       isLoading: true,
       totalResults: undefined,
@@ -312,7 +312,7 @@ describe('LocationPicker', () => {
       isLoading: false,
     });
 
-    mockUseLocations.mockReturnValue({
+    mockUseRoleFilteredLocations.mockReturnValue({
       locations: locationsWithDuplicate as any,
       isLoading: false,
       totalResults: 5,
@@ -348,8 +348,8 @@ describe('LocationPicker', () => {
       isLoading: false,
     });
 
-    // Mock useLocations to return filtered results when searching
-    mockUseLocations.mockImplementation((locationTag, count, searchQuery) => {
+    // Mock useRoleFilteredLocations to return filtered results when searching
+    mockUseRoleFilteredLocations.mockImplementation((locationTag, count, searchQuery) => {
       if (searchQuery === 'mobile') {
         // Return only Mobile Clinic when searching for "mobile"
         const mobileClinic = mockLoginLocations.data.entry.find((entry) => entry.resource.name === 'Mobile Clinic');
@@ -392,7 +392,7 @@ describe('LocationPicker', () => {
   it('should display inline error notification when location loading fails', async () => {
     const mockError = new Error('Failed to load locations');
 
-    mockUseLocations.mockReturnValue({
+    mockUseRoleFilteredLocations.mockReturnValue({
       locations: [] as any,
       isLoading: false,
       totalResults: undefined,
