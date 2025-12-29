@@ -4,7 +4,6 @@ import { useLocation, type Location, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   getCoreTranslation,
-  LocationPicker,
   navigate,
   setSessionLocation,
   useConfig,
@@ -14,6 +13,7 @@ import {
 import { useDefaultLocation, useLocationCount } from './location-picker.resource';
 import type { ConfigSchema } from '../config-schema';
 import type { LoginReferrer } from '../login/login.component';
+import { LocationPicker } from '../location-picker-selector/location-picker.component';
 import styles from './location-picker.scss';
 
 interface LocationPickerProps {
