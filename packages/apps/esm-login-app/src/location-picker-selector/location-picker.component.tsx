@@ -10,6 +10,7 @@ import {
 import { getCoreTranslation } from '@openmrs/esm-translations';
 import { useOnVisible } from '@openmrs/esm-framework';
 import { useLocationByUuid, useRoleFilteredLocations } from './location-picker.resource';
+import { useTranslation } from 'react-i18next';
 import styles from './location-picker.module.scss';
 
 interface LocationPickerProps {
@@ -29,6 +30,7 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const searchId = useId();
+  const { t } = useTranslation();
 
   const { location: defaultLocation } = useLocationByUuid(defaultLocationUuid);
 
@@ -78,9 +80,9 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
     <>
       <Search
         aria-describedby={error ? `${searchId}-error` : undefined}
-        labelText={getCoreTranslation('searchForLocation')}
+        labelText={t('searchForLocation', 'Search')}
         id={searchId}
-        placeholder={getCoreTranslation('searchForLocation')}
+        placeholder={t('searchForLocation', 'Search')}
         onChange={(event) => handleSearchChange(event.target.value)}
         size="lg"
       />
