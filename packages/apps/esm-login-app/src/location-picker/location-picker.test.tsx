@@ -22,13 +22,13 @@ import renderWithRouter from '../test-helpers/render-with-router';
 import LocationPickerView from './location-picker-view.component';
 
 const fistLocation = {
-  uuid: 'uuid_1',
-  name: 'location_1',
+  uuid: '1ce1b7d4-c865-4178-82b0-5932e51503d6',
+  name: 'Community Outreach',
 };
 
 const secondLocation = {
-  uuid: 'uuid_2',
-  name: 'location_2',
+  uuid: 'ba685651-ed3b-4e63-9b35-78893060758a',
+  name: 'Inpatient Ward',
 };
 
 const invalidLocationUuid = '2gf1b7d4-c865-4178-82b0-5932e51503d6';
@@ -37,6 +37,19 @@ const userUuid = '90bd24b3-e700-46b0-a5ef-c85afdfededd';
 const mockOpenmrsFetch = jest.mocked(openmrsFetch);
 const mockUseConfig = jest.mocked(useConfig);
 const mockUseSession = jest.mocked(useSession);
+
+// Mock useUserInheritedRoles to disable role-based filtering in tests
+jest.mock('../location-picker-selector/location-picker.resource', () => {
+  const actual = jest.requireActual('../location-picker-selector/location-picker.resource');
+  return {
+    ...actual,
+    useUserInheritedRoles: jest.fn(() => ({
+      allRoles: [],
+      isLoading: false,
+      error: null,
+    })),
+  };
+});
 
 describe('LocationPickerView', () => {
   beforeEach(() => {
